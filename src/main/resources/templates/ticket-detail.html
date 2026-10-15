@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title th:text="${ticket.subject + ' | Relay'}">Ticket | Relay</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" th:href="@{/css/app.css}" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="rail">
+        <a class="brand" th:href="@{/app/tickets}" aria-label="Relay home"
+          ><span class="brand-mark">R</span
+          ><span>relay<span class="brand-period">.</span></span></a
+        >
+        <div class="rail-label">WORKSPACE</div>
+        <a class="rail-link active" th:href="@{/app/tickets}"
+          ><span class="rail-icon">▤</span>Tickets</a
+        >
+        <div class="rail-bottom">
+          <div class="org-chip">
+            <span class="org-dot"></span
+            ><span th:text="${currentUser.organization.name}"
+              >Organization</span
+            >
+          </div>
+          <div class="profile-row">
+            <span
+              class="avatar"
+              th:text="${#strings.substring(currentUser.displayName, 0, 1)}"
+              >A</span
+            ><span class="profile-copy"
+              ><strong th:text="${currentUser.displayName}">User</strong
+              ><small
+                th:text="${#strings.replace(currentUser.role.name(), '_', ' ')}"
+                >Role</small
+              ></span
+            >
+          </div>
+          <form th:action="@{/logout}" method="post">
+            <button class="logout-button" type="submit">
+              Sign out <span aria-hidden="true">↗</span>
+            </button>
+          </form>
+        </div>
+      </aside>
+      <main class="main-column">
+        <header class="topbar">
+          <a class="crumb back-link" th:href="@{/app/tickets}">← Tickets</a
+          ><span class="today" th:text="${currentUser.organization.slug}"
+            >organization</span
+          >
+        </header>
+        <section class="page-content detail-content">
+          <div class="notice" th:if="${notice}" th:text="${notice}">Done</div>
+          <div class="detail-heading">
+            <div>
+              <p class="eyebrow">
+                <span th:text="${'#' + ticket.id}">#104</span
+                ><span class="eyebrow-line"></span
+                ><span th:text="${ticket.organization}">Organization</span>
+              </p>
+              <h1 th:text="${ticket.subject}">Ticket subject</h1>
+              <p class="subheading">
+                Opened by
+                <strong th:text="${ticket.requesterName}">Requester</strong>
+                <span class="dot-separator">·</span>
+                <span
+                  th:text="${#temporals.format(ticket.createdAt, 'MMM d, yyyy · HH:mm')}"
+                  >Date</span
+                >
+              </p>
+            </div>
+            <span
+              class="status-pill detail-status"
+              th:classappend="${' status-' + #strings.toLowerCase(ticket.status.name())}"
+              th:text="${#strings.replace(ticket.status.name(), '_', ' ')}"
+              >OPEN</span
+            >
+          </div>
+          <div class="detail-grid">
+            <div class="conversation-column">
+              <article class="description-block">
+                <div class="section-kicker">REQUEST DETAILS</div>
+                <p class="description-text" th:text="${ticket.description}">
+                  Description
+                </p>
+                <div class="ticket-meta">
+                  <span
+                    >Priority
+                    <strong
+                      th:classappend="${' priority-' + #strings.toLowerCase(ticket.priority.name())}"
+                      th:text="${ticket.priority}"
+                      >NORMAL</strong
+                    ></span
+                  ><span
+                    >Updated
+                    <strong
+                      th:text="${#temporals.format(ticket.updatedAt, 'MMM d, yyyy · HH:mm')}"
+                      >Date</strong
+                    ></span
+                  >
+                </div>
+              </article>
+              <section class="activity-section">
+                <div class="section-heading">
+                  <h2>Conversation</h2>
+                  <span
+                    class="section-count"
+                    th:text="${ticket.comments.size()}"
+                    >0</span
+                  >
+                </div>
+                <div class="comment-list">
+                  <article
+                    class="comment-item"
+                    th:each="comment : ${ticket.comments}"
+                    th:classappend="${comment.internal ? ' comment-internal' : ''}"
+                  >
+                    <div
+                      class="comment-avatar"
+                      th:text="${#strings.substring(comment.author, 0, 1)}"
+                    >
+                      A
+                    </div>
+                    <div class="comment-main">
+                      <div class="comment-heading">
+                        <strong th:text="${comment.author}">Author</strong
+                        ><span class="internal-tag" th:if="${comment.internal}"
+                          >STAFF NOTE</span
+                        ><time
+                          th:text="${#temporals.format(comment.createdAt, 'MMM d · HH:mm')}"
+                          >Time</time
+                        >
+                      </div>
+                      <p th:text="${comment.body}">Comment</p>
+                    </div>
+                  </article>
+                  <div class="comment-empty" th:if="${ticket.comments.empty}">
+                    No replies yet. Add the first update below.
+                  </div>
+                </div>
+                <form
+                  class="reply-form"
+                  th:action="@{/app/tickets/{id}/comments(id=${ticket.id})}"
+                  method="post"
+                >
+                  <label for="reply-body">Add a reply</label
+                  ><textarea
+                    id="reply-body"
+                    name="body"
+                    rows="3"
+                    maxlength="4000"
+                    required
+                    placeholder="Write a response..."
+                  ></textarea>
+                  <div class="reply-footer">
+                    <label class="check-label" th:if="${isStaff}"
+                      ><input
+                        type="checkbox"
+                        name="internal"
+                        value="true"
+                      /><span>Internal note</span></label
+                    ><span class="reply-spacer" th:unless="${isStaff}"></span
+                    ><button class="button button-primary" type="submit">
+                      Send reply <span aria-hidden="true">↗</span>
+                    </button>
+                  </div>
+                </form>
+              </section>
+            </div>
+            <aside class="detail-sidebar">
+              <section class="side-section">
+                <div class="section-kicker">TICKET OWNER</div>
+                <div class="person-line">
+                  <span
+                    class="avatar avatar-small"
+                    th:text="${#strings.substring(ticket.requesterName, 0, 1)}"
+                    >C</span
+                  ><span
+                    ><strong th:text="${ticket.requesterName}">Requester</strong
+                    ><small>Customer</small></span
+                  >
+                </div>
+              </section>
+              <section class="side-section">
+                <div class="section-kicker">ASSIGNED TO</div>
+                <div class="person-line">
+                  <span
+                    class="avatar avatar-small avatar-agent"
+                    th:text="${ticket.assignedAgentName == null ? '—' : #strings.substring(ticket.assignedAgentName, 0, 1)}"
+                    >—</span
+                  ><span
+                    ><strong
+                      th:text="${ticket.assignedAgentName == null ? 'Unassigned' : ticket.assignedAgentName}"
+                      >Unassigned</strong
+                    ><small>Support team</small></span
+                  >
+                </div>
+              </section>
+              <section class="side-section" th:if="${isStaff}">
+                <form
+                  class="assignment-form"
+                  th:action="@{/app/tickets/{id}/update(id=${ticket.id})}"
+                  method="post"
+                >
+                  <div class="section-kicker">MANAGE TICKET</div>
+                  <label
+                    >Status<select name="status">
+                      <option
+                        th:each="item : ${statuses}"
+                        th:value="${item}"
+                        th:text="${#strings.replace(item.name(), '_', ' ')}"
+                        th:selected="${item == ticket.status}"
+                      ></option></select></label
+                  ><label
+                    >Priority<select name="priority">
+                      <option
+                        th:each="item : ${priorities}"
+                        th:value="${item}"
+                        th:text="${item}"
+                        th:selected="${item == ticket.priority}"
+                      ></option></select></label
+                  ><label
+                    >Assignee<select name="assignedAgentId">
+                      <option value="">Keep current assignee</option>
+                      <option
+                        th:each="agent : ${agents}"
+                        th:value="${agent.id}"
+                        th:text="${agent.displayName}"
+                        th:selected="${agent.id == ticket.assignedAgentId}"
+                      ></option></select></label
+                  ><button class="button button-dark button-full" type="submit">
+                    Save changes
+                  </button>
+                </form>
+              </section>
+              <section class="side-section history-section">
+                <div class="section-kicker">TICKET HISTORY</div>
+                <div class="history-item" th:each="event : ${ticket.history}">
+                  <span class="history-dot"></span>
+                  <div>
+                    <strong
+                      th:text="${event.field == 'status' ? 'Status changed' : 'Assignment changed'}"
+                      >Updated</strong
+                    >
+                    <p>
+                      <span
+                        th:text="${event.oldValue == null ? '—' : event.oldValue}"
+                        >—</span
+                      ><span aria-hidden="true"> → </span
+                      ><span th:text="${event.newValue}">OPEN</span>
+                    </p>
+                    <small
+                      ><span th:text="${event.changedBy}">Actor</span
+                      ><span class="dot-separator">·</span
+                      ><time
+                        th:text="${#temporals.format(event.createdAt, 'MMM d, HH:mm')}"
+                        >Time</time
+                      ></small
+                    >
+                  </div>
+                </div>
+                <p class="history-empty" th:if="${ticket.history.empty}">
+                  No changes recorded.
+                </p>
+              </section>
+            </aside>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

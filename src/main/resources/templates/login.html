@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign in | Relay</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" th:href="@{/css/app.css}" />
+  </head>
+  <body class="login-body">
+    <main class="login-layout">
+      <section class="login-panel">
+        <a class="brand" th:href="@{/}"
+          ><span class="brand-mark">R</span
+          ><span>relay<span class="brand-period">.</span></span></a
+        >
+        <p class="eyebrow">CUSTOMER SUPPORT, IN SYNC</p>
+        <h1>Good work starts with a clear signal.</h1>
+        <p class="login-copy">Sign in to your organization’s support desk.</p>
+        <form class="login-form" th:action="@{/login}" method="post">
+          <label
+            >Email address<input
+              type="email"
+              name="username"
+              autocomplete="username"
+              required
+              autofocus
+              placeholder="you@company.com" /></label
+          ><label
+            >Password<input
+              type="password"
+              name="password"
+              autocomplete="current-password"
+              required
+              placeholder="Your password"
+          /></label>
+          <p class="login-error" th:if="${param.error}">
+            That email and password combination was not recognized.
+          </p>
+          <p class="login-success" th:if="${param.logout}">
+            You have signed out.
+          </p>
+          <button class="button button-primary button-full" type="submit">
+            Sign in <span aria-hidden="true">↗</span>
+          </button>
+        </form>
+      </section>
+      <aside class="login-art">
+        <div class="art-grid"></div>
+        <div class="art-mark">R<span>.</span></div>
+        <div class="art-caption">
+          <span>ONE DESK, EVERY CONVERSATION</span
+          ><span class="art-rule"></span>
+        </div>
+        <div class="orbit orbit-one"></div>
+        <div class="orbit orbit-two"></div>
+        <div class="signal signal-one"></div>
+        <div class="signal signal-two"></div>
+        <div class="signal signal-three"></div>
+      </aside>
+    </main>
+  </body>
+</html>

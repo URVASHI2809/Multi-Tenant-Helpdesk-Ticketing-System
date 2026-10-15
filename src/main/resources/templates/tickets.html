@@ -1,0 +1,268 @@
+<!doctype html>
+<html
+  lang="en"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ticket queue | Relay</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" th:href="@{/css/app.css}" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="rail">
+        <a class="brand" th:href="@{/app/tickets}" aria-label="Relay home"
+          ><span class="brand-mark">R</span
+          ><span>relay<span class="brand-period">.</span></span></a
+        >
+        <div class="rail-label">WORKSPACE</div>
+        <a class="rail-link active" th:href="@{/app/tickets}"
+          ><span class="rail-icon">▤</span>Tickets</a
+        >
+        <div class="rail-bottom">
+          <div class="org-chip">
+            <span class="org-dot"></span
+            ><span th:text="${currentUser.organization.name}"
+              >Organization</span
+            >
+          </div>
+          <div class="profile-row">
+            <span
+              class="avatar"
+              th:text="${#strings.substring(currentUser.displayName, 0, 1)}"
+              >A</span
+            ><span class="profile-copy"
+              ><strong th:text="${currentUser.displayName}">User</strong
+              ><small
+                th:text="${#strings.replace(currentUser.role.name(), '_', ' ')}"
+                >Role</small
+              ></span
+            >
+          </div>
+          <form th:action="@{/logout}" method="post">
+            <button class="logout-button" type="submit">
+              Sign out <span aria-hidden="true">↗</span>
+            </button>
+          </form>
+        </div>
+      </aside>
+
+      <main class="main-column">
+        <header class="topbar">
+          <span class="crumb">Workspace <span>/</span> Tickets</span
+          ><span class="today" th:text="${currentUser.organization.slug}"
+            >organization</span
+          >
+        </header>
+        <section class="page-content">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">
+                SUPPORT OPERATIONS <span class="eyebrow-line"></span>
+              </p>
+              <h1 th:if="${isStaff}">
+                Ticket queue<span
+                  class="heading-count"
+                  th:text="${tickets.totalElements}"
+                  >0</span
+                >
+              </h1>
+              <h1 th:unless="${isStaff}">
+                My tickets<span
+                  class="heading-count"
+                  th:text="${tickets.totalElements}"
+                  >0</span
+                >
+              </h1>
+              <p class="subheading">Keep every request moving.</p>
+            </div>
+            <a class="button button-primary" href="#new-ticket"
+              ><span aria-hidden="true">＋</span> New ticket</a
+            >
+          </div>
+
+          <div class="notice" th:if="${notice}" th:text="${notice}">Done</div>
+
+          <form class="filter-bar" th:action="@{/app/tickets}" method="get">
+            <label class="search-field"
+              ><span aria-hidden="true">⌕</span
+              ><input
+                type="search"
+                name="q"
+                placeholder="Search tickets"
+                th:value="${q}"
+            /></label>
+            <label class="filter-select"
+              ><span class="sr-only">Status</span
+              ><select name="status">
+                <option value="">All statuses</option>
+                <option
+                  th:each="item : ${statuses}"
+                  th:value="${item}"
+                  th:text="${#strings.replace(item.name(), '_', ' ')}"
+                  th:selected="${item == selectedStatus}"
+                ></option></select
+            ></label>
+            <label class="filter-select"
+              ><span class="sr-only">Priority</span
+              ><select name="priority">
+                <option value="">All priorities</option>
+                <option
+                  th:each="item : ${priorities}"
+                  th:value="${item}"
+                  th:text="${item}"
+                  th:selected="${item == selectedPriority}"
+                ></option></select
+            ></label>
+            <label class="filter-select" th:if="${isStaff}"
+              ><span class="sr-only">Assigned agent</span
+              ><select name="assignedAgentId">
+                <option value="">Any assignee</option>
+                <option
+                  th:each="agent : ${agents}"
+                  th:value="${agent.id}"
+                  th:text="${agent.displayName}"
+                  th:selected="${agent.id == selectedAssignee}"
+                ></option></select
+            ></label>
+            <button class="button button-filter" type="submit">
+              Apply filters
+            </button>
+          </form>
+
+          <section class="ticket-table" aria-label="Tickets">
+            <div class="table-head">
+              <span>REQUEST</span><span>STATUS</span><span>PRIORITY</span
+              ><span th:if="${isStaff}">ASSIGNEE</span><span>UPDATED</span>
+            </div>
+            <a
+              class="ticket-row"
+              th:each="ticket : ${tickets.content}"
+              th:href="@{/app/tickets/{id}(id=${ticket.id})}"
+            >
+              <span class="request-cell"
+                ><span class="ticket-number" th:text="${'#' + ticket.id}"
+                  >#104</span
+                ><span class="request-copy"
+                  ><strong th:text="${ticket.subject}">Ticket subject</strong
+                  ><small
+                    ><span th:text="${ticket.requesterName}">Requester</span
+                    ><span class="dot-separator">·</span
+                    ><span th:text="${ticket.organization}"
+                      >Organization</span
+                    ></small
+                  ></span
+                ></span
+              >
+              <span
+                ><span
+                  class="status-pill"
+                  th:classappend="${' status-' + #strings.toLowerCase(ticket.status.name())}"
+                  th:text="${#strings.replace(ticket.status.name(), '_', ' ')}"
+                  >OPEN</span
+                ></span
+              >
+              <span
+                ><span
+                  class="priority-label"
+                  th:classappend="${' priority-' + #strings.toLowerCase(ticket.priority.name())}"
+                  th:text="${ticket.priority}"
+                  >NORMAL</span
+                ></span
+              >
+              <span
+                class="assignee-cell"
+                th:if="${isStaff}"
+                th:text="${ticket.assignedAgentName == null ? 'Unassigned' : ticket.assignedAgentName}"
+                >Unassigned</span
+              >
+              <span
+                class="updated-cell"
+                th:text="${#temporals.format(ticket.updatedAt, 'MMM d, yyyy')}"
+                >Today</span
+              >
+            </a>
+            <div class="empty-state" th:if="${tickets.empty}">
+              <span class="empty-icon">—</span
+              ><strong>No tickets match these filters</strong
+              ><span>Try broadening your search.</span>
+            </div>
+            <div class="pagination" th:if="${tickets.totalPages > 1}">
+              <span
+                th:text="${'Page ' + (tickets.number + 1) + ' of ' + tickets.totalPages}"
+                >Page 1 of 2</span
+              >
+              <div>
+                <a
+                  class="page-button"
+                  th:if="${tickets.hasPrevious()}"
+                  th:href="@{/app/tickets(page=${tickets.number - 1},q=${q},status=${selectedStatus},priority=${selectedPriority},assignedAgentId=${selectedAssignee})}"
+                  >← Previous</a
+                ><a
+                  class="page-button"
+                  th:if="${tickets.hasNext()}"
+                  th:href="@{/app/tickets(page=${tickets.number + 1},q=${q},status=${selectedStatus},priority=${selectedPriority},assignedAgentId=${selectedAssignee})}"
+                  >Next →</a
+                >
+              </div>
+            </div>
+          </section>
+
+          <details class="new-ticket" id="new-ticket">
+            <summary>
+              <span
+                ><span class="summary-plus">＋</span> Open a support
+                request</span
+              ><span class="summary-hint"
+                >Create ticket <span aria-hidden="true">↓</span></span
+              >
+            </summary>
+            <form
+              class="new-ticket-form"
+              th:action="@{/app/tickets}"
+              method="post"
+            >
+              <label
+                >Subject<input
+                  name="subject"
+                  maxlength="180"
+                  required
+                  placeholder="A short summary of the issue"
+              /></label>
+              <label
+                >Description<textarea
+                  name="description"
+                  maxlength="8000"
+                  rows="4"
+                  required
+                  placeholder="What happened? Include the steps you took."
+                ></textarea>
+              </label>
+              <div class="form-footer">
+                <label class="priority-form"
+                  >Priority<select name="priority">
+                    <option
+                      th:each="item : ${priorities}"
+                      th:value="${item}"
+                      th:text="${item}"
+                      th:selected="${item.name() == 'NORMAL'}"
+                    ></option></select></label
+                ><button class="button button-primary" type="submit">
+                  Create ticket <span aria-hidden="true">↗</span>
+                </button>
+              </div>
+            </form>
+          </details>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
